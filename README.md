@@ -13,10 +13,10 @@ The GCP-Guardian is a script that allows you to scan your Google Cloud Platform 
 - jq
 
 ## Usage
-
-1. Clone the repository or download the script file `gcp_security_scanner.sh` to your local machine.
-2. Open a terminal and navigate to the directory where the script is located.
-3. Run the script using the following command:
+1. ***You need to be logged in with gcloud***
+2. Clone the repository or download the script file `gcp_security_scanner.sh` to your local machine.
+3. Open a terminal and navigate to the directory where the script is located.
+4. Run the script using the following command:
 
 ```bash
 GCP-Guardian.sh -h
