@@ -1,5 +1,5 @@
 
-![Logo](https://)
+![Logo]([https://](https://raw.githubusercontent.com/BLY-Coder/GCP-Guardian/main/logo.png))
 
 # GCP-Guardian
 
