@@ -17,9 +17,7 @@ run_ip=false
 run_check_unauth_storage=false
 run_list_projects=false
 run_secrets=false
-project=""
-iam_file=""
-secrets_file="secrets.txt"
+run_sa=false
 
 # Output file names
 permissions_file="bqpermissions.txt"
@@ -27,6 +25,8 @@ storage_file="gcpstorage.txt"
 ip_file="ips.txt"
 unauth_permissions_file="unauthpermissions.txt"
 projects_file="projects.txt"
+service_accounts_file="sa.txt"
+secrets_file="secrets.txt"
 
 # Function to enumerate BigQuery
 enumerate_bigquery() {
@@ -106,6 +106,19 @@ list_projects() {
   echo -e "${GREEN}The list of projects has been stored in $projects_file.${NC}"
 }
 
+
+# Function to get Services accounts
+
+enumerate_sa(){
+  echo -e "${BLUE}Listing service accounts...${NC}"
+  for project in $(gcloud projects list --format="value(projectId)" 2>/dev/null); do
+    echo -e "${YELLOW}Project: $project${NC}"
+    echo "=============================="
+    gcloud iam service-accounts list --project="$project" >> "$service_accounts_file" 2>/dev/null
+    echo ""
+  done
+  echo -e "${GREEN}The list of service accounts has been stored in $service_accounts_file.${NC}"
+}
 # Function to enumerate secrets
 enumerate_secrets() {
   echo -e "${BLUE}Enumerating secrets...${NC}"
@@ -119,17 +132,10 @@ enumerate_secrets() {
   echo -e "${GREEN}Secrets enumeration has completed.${NC}"
 }
 
-# Function to get IAM policy of a specific project
-get_iam_policy() {
-  echo -e "${BLUE}Getting IAM policy of project $project...${NC}"
-  gcloud projects get-iam-policy "$project" > "$iam_file"
-  echo -e "${GREEN}The IAM policy of project $project has been stored in $iam_file.${NC}"
-}
-
 # Parse arguments
 if [ $# -eq 0 ]; then
   # No arguments provided, display help menu
-  echo -e "${BLUE}Usage: $0 [-a] [-b] [-s] [-i] [-c] [-l] [-p project] [-x] [-h]${NC}"
+  echo -e "${BLUE}Usage: $0 [-a] [-b] [-s] [-i] [-c] [-l] [-x] [-h] [-g]${NC}"
   echo -e "${GREEN}Options:${NC}"
   echo -e "${YELLOW}  -a: Run all scans${NC}"
   echo -e "${YELLOW}  -b: Enumerate BigQuery${NC}"
@@ -137,13 +143,13 @@ if [ $# -eq 0 ]; then
   echo -e "${YELLOW}  -i: Enumerate public IP addresses of VMs${NC}"
   echo -e "${YELLOW}  -c: Check for unauthorized storage permissions${NC}"
   echo -e "${YELLOW}  -l: List all projects${NC}"
-  echo -e "${YELLOW}  -p project: Get IAM policy of a specific project${NC}"
   echo -e "${YELLOW}  -x: Enumerate secrets${NC}"
+  echo -e "${YELLOW}  -g: Get Service Accounts${NC}"
   echo -e "${YELLOW}  -h: Show this help menu${NC}"
   exit 0
 fi
 
-while getopts "absihclpx" opt; do
+while getopts "absihclpxg" opt; do
   case ${opt} in
     a)
       run_all=true
@@ -163,16 +169,15 @@ while getopts "absihclpx" opt; do
     l)
       run_list_projects=true
       ;;
-    p)
-      project=$OPTARG
-      iam_file="iam-${project}.txt"
-      ;;
     x)
       run_secrets=true
       ;;
+    g)
+      run_sa=true
+      ;;
     h | *)
       # Display help menu
-      echo -e "${BLUE}Usage: $0 [-a] [-b] [-s] [-i] [-c] [-l] [-p project] [-x] [-h]${NC}"
+      echo -e "${BLUE}Usage: $0 [-a] [-b] [-s] [-i] [-c] [-l] [-x] [-h] [-g] ${NC}"
       echo -e "${GREEN}Options:${NC}"
       echo -e "${YELLOW}  -a: Run all scans${NC}"
       echo -e "${YELLOW}  -b: Enumerate BigQuery${NC}"
@@ -180,8 +185,8 @@ while getopts "absihclpx" opt; do
       echo -e "${YELLOW}  -i: Enumerate public IP addresses of VMs${NC}"
       echo -e "${YELLOW}  -c: Check for unauthorized storage permissions${NC}"
       echo -e "${YELLOW}  -l: List all projects${NC}"
-      echo -e "${YELLOW}  -p project: Get IAM policy of a specific project${NC}"
       echo -e "${YELLOW}  -x: Enumerate secrets${NC}"
+      echo -e "${YELLOW}  -g: Get Service Accounts${NC}"
       echo -e "${YELLOW}  -h: Show this help menu${NC}"
       exit 1
       ;;
@@ -194,6 +199,7 @@ if $run_all; then
   run_storage=true
   run_ip=true
   run_check_unauth_storage=true
+  run_sa=true
 fi
 
 if $run_bigquery; then
@@ -218,6 +224,10 @@ fi
 
 if $run_secrets; then
   enumerate_secrets
+fi
+
+if $run_sa; then
+  enumerate_sa
 fi
 
 if [[ -n $project ]]; then
